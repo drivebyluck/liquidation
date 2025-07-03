@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/sol-liquidations', async (req, res) => {
   try {
-    const response = await axios.get('https://open-api.coinglass.com/api/futures/liquidation_chart', {
+    const response = await axios.get('https://open-api.coinglass.com/public/v2/liquidation_chart', {
       headers: {
         coinglassSecret: '3c232344442e4f269a96856cd4268936'
       },
@@ -22,20 +22,20 @@ app.get('/api/sol-liquidations', async (req, res) => {
       }
     });
 
-    const liquidationData = response.data.data?.UData;
+    const liquidationData = response.data.data?.uVol;
 
-    if (!liquidationData) {
+    if (!liquidationData || !Array.isArray(liquidationData)) {
       return res.status(500).json({ error: 'No liquidation data returned' });
     }
 
-    const sorted = liquidationData
+    const formatted = liquidationData
       .map(item => ({
         price: item.p,
-        amount: item.liqVol
+        amount: item.v
       }))
       .sort((a, b) => b.amount - a.amount);
 
-    res.json(sorted);
+    res.json(formatted);
   } catch (error) {
     console.error('Fetch error:', error.message);
     res.status(500).json({ error: 'Failed to fetch liquidation data from CoinGlass' });
