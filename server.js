@@ -3,7 +3,7 @@ const axios = require('axios');
 const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
@@ -13,27 +13,26 @@ app.get('/', (req, res) => {
 
 app.get('/api/sol-liquidations', async (req, res) => {
   try {
-    const response = await axios.get('https://open-api.coinglass.com/public/v2/liquidation_chart', {
+    const response = await axios.get('https://open-api.coinglass.com/api/pro/v1/futures/liquidation_chart', {
       headers: {
         coinglassSecret: '3c232344442e4f269a96856cd4268936'
       },
       params: {
-        symbol: 'SOL'
+        symbol: 'SOL',
+        time_type: 'hour' // optional, try 'hour' or 'day'
       }
     });
 
-    const liquidationData = response.data.data?.uVol;
+    const rawData = response.data?.data?.uVol || [];
 
-    if (!liquidationData || !Array.isArray(liquidationData)) {
+    if (!rawData.length) {
       return res.status(500).json({ error: 'No liquidation data returned' });
     }
 
-    const formatted = liquidationData
-      .map(item => ({
-        price: item.p,
-        amount: item.v
-      }))
-      .sort((a, b) => b.amount - a.amount);
+    const formatted = rawData.map(entry => ({
+      price: entry.p,
+      amount: entry.v
+    })).sort((a, b) => b.amount - a.amount);
 
     res.json(formatted);
   } catch (error) {
